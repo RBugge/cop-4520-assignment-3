@@ -29,7 +29,7 @@ class Main {
     // 500,000 presents
 
     static final int NUM_THREADS = 4;
-    static final int NUM_PRESENTS = 1000;
+    static final int NUM_PRESENTS = 500000;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
         // Shuffled array list of presents, represented by integers
@@ -62,22 +62,25 @@ class Main {
                                 chain.add(present);
                             }
                         } else {
-                            Integer present = chain.poll();
-                            if (present != null) {
+                            if (chain.removeHead()) {
                                 thankYouCards++;
                             }
                         }
                     }
                     return thankYouCards;
                 }
+
             }));
+        }
+
+        while(!bag.isEmpty() || !chain.isEmpty()) {
+
         }
 
         // Wait for all threads to finish
         for (int i = 0; i < NUM_THREADS; i++) {
             completionService.take();
         }
-
 
         int totalThankYouCards = 0;
 
@@ -153,11 +156,11 @@ class ConcurrentLinkedList<T> {
                 succ = curr.next.get(marked);
                 while (marked[0]) {
                     snip = pred.next.compareAndSet(curr, succ, false, false);
-                    if (!snip) // s
+                    if (!snip)
                         continue retry;
-                        // if (!snip || curr == tail)
-                        // continue retry;
                     curr = succ;
+                    if(curr == tail)
+                        continue retry;
                     succ = curr.next.get(marked);
                 }
                 if (curr.key >= key)
@@ -216,13 +219,13 @@ class ConcurrentLinkedList<T> {
         return (curr.key == key && !curr.next.isMarked());
     }
 
-    public T poll() {
-        Node res = head.next.getReference();
-        if (res != tail) {
-            remove(res.item);
-            return res.item;
+    public boolean removeHead() {
+        Node n = head.next.getReference();
+
+        if (n != tail && remove(n.item)){
+            return true;
         } else {
-            return null;
+            return false;
         }
     }
 
