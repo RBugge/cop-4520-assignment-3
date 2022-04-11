@@ -12,10 +12,7 @@ class Main {
     // 4 (threads) servants to help Minotaur to create chain of presents
 
     /**
-     * Actions:
-     * 1. Take present from bag, add to to linked list
-     * 2. Write thank you card and remove present from linked list
-     * 3. Check whether a gift is present in linked list
+
      */
 
     /**
@@ -38,79 +35,95 @@ class Main {
             presentsList.add(i);
         }
         Collections.shuffle(presentsList);
+
+        // ConcurrentLinkedQueue to represent bag of presents
         ConcurrentLinkedQueue<Integer> bag = new ConcurrentLinkedQueue<>(presentsList);
-
         ConcurrentLinkedList<Integer> chain = new ConcurrentLinkedList<>();
-        // ConcurrentSkipListSet<Integer> set = new ConcurrentSkipListSet<>();
 
+        // Markable references for each thread for communicating with Minotaur
+        @SuppressWarnings (value="unchecked")
+        AtomicMarkableReference<Integer> checkPresent[] = new AtomicMarkableReference[NUM_THREADS];
+        for (int i = 0; i < NUM_THREADS; i++) {
+            checkPresent[i] = new AtomicMarkableReference<>(-1, false);
+        }
+
+        // ExecutorService to run threads
         ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
         CompletionService<Integer> completionService = new ExecutorCompletionService<>(executor);
-        ArrayList<Future<Integer>> futures = new ArrayList<>();
-        // Threads (Servants)
+
+        /**
+         * Servants (Threads)
+         * Actions:
+         * 1. Take present from bag, add it to linked list
+         * 2. Remove present from linked list and write thank you card
+         * 3. Check whether a gift is present in linked list
+         *
+         * One of the first two actions is performed randomly, the third action
+         * is performed at the Minotaur's (Main thread) request.
+         *
+         * These actions are repeated until the bag and linked list are empty.
+         */
         for (int i = 0; i < NUM_THREADS; i++) {
             final int id = i;
-            futures.add(completionService.submit(new Callable<Integer>() {
+            completionService.submit(new Callable<Integer>() {
                 private final int ID = id;
                 private final Random rand = new Random();
 
                 public Integer call() {
                     int thankYouCards = 0;
                     while (!bag.isEmpty() || !chain.isEmpty()) {
-                        if (rand.nextInt(2) == 1) {
+                        // Randomly choose action 1 or 2
+                        if (rand.nextBoolean()) {
                             Integer present = bag.poll();
                             if (present != null) {
                                 chain.add(present);
                             }
-                        } else {
-                            if (chain.removeHead()) {
-                                thankYouCards++;
-                            }
+                        } else if (chain.removeHead()) {
+                            thankYouCards++;
+                        }
+
+                        // Action 3
+                        if (checkPresent[ID].isMarked()) {
+                            chain.contains(checkPresent[ID].getReference());
+                            // Print out for action 3, unneeded
+                            // if(list.contains(checkPresent[ID].getReference()))
+                            //     System.out.println("Present " + checkPresent[ID].getReference() + " is present in the chain.");
+                            // else
+                            //     System.out.println("Present " + checkPresent[ID].getReference() + " is not present in the chain.");
+                            checkPresent[ID].set(-1, false);
                         }
                     }
+
                     return thankYouCards;
                 }
-
-            }));
+            });
         }
 
-        while(!bag.isEmpty() || !chain.isEmpty()) {
+        // Minotaur picks random servant to check if a random present is in the list
+        Random rand = new Random();
+        while (!bag.isEmpty() || !chain.isEmpty()) {
+            // Sleep for a random amount of time between 0 and 10 milliseconds
+            Thread.sleep(rand.nextInt(10));
 
+            checkPresent[rand.nextInt(NUM_THREADS)].compareAndSet(-1, rand.nextInt(NUM_PRESENTS), false, true);
         }
 
-        // Wait for all threads to finish
-        for (int i = 0; i < NUM_THREADS; i++) {
-            completionService.take();
-        }
-
+        // Wait for all threads to finish and sum thank you cards written
         int totalThankYouCards = 0;
-
-        for (Future<Integer> future : futures) {
-            System.out.println(future.get());
-            totalThankYouCards += future.get();
+        for (int i = 0; i < NUM_THREADS; i++) {
+            totalThankYouCards += completionService.take().get();
         }
-
-        executor.shutdown();
-
-        // for (int i = 0; i < NUM_PRESENTS; i++) {
-        // System.out.println(chain.poll());
-        // }
-
         System.out.println("Total thank you cards: " + totalThankYouCards);
 
-        // chain.print();
-
-        // for(int i = 0; i < NUM_PRESENTS; i++) {
-        // if(!chain.contains(i)) {
-        // System.out.println("Missing present: " + i);
-        // }
-        // }
-
+        executor.shutdown();
     }
 
 }
 
 // Wait Free List as described in the textbook
-// Modified to use Integer value as key instead of hash to ensure order
+// Modified to work :)
+// Uses Integer value as key instead of hash (when applicable) to ensure order
+// Uses head and tail sentinel nodes
 class ConcurrentLinkedList<T> {
     private Node head = new Node(null, Integer.MIN_VALUE);
     private Node tail = new Node(null, Integer.MAX_VALUE);
@@ -128,7 +141,6 @@ class ConcurrentLinkedList<T> {
             this.item = item;
             this.key = key;
         }
-
     }
 
     class Window {
@@ -138,7 +150,6 @@ class ConcurrentLinkedList<T> {
             pred = myPred;
             curr = myCurr;
         }
-
     }
 
     Window find(Node head, int key) {
@@ -159,7 +170,7 @@ class ConcurrentLinkedList<T> {
                     if (!snip)
                         continue retry;
                     curr = succ;
-                    if(curr == tail)
+                    if (curr == tail)
                         continue retry;
                     succ = curr.next.get(marked);
                 }
@@ -222,7 +233,7 @@ class ConcurrentLinkedList<T> {
     public boolean removeHead() {
         Node n = head.next.getReference();
 
-        if (n != tail && remove(n.item)){
+        if (n != tail && remove(n.item)) {
             return true;
         } else {
             return false;

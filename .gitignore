@@ -1,3 +1,4 @@
 .markdownlint.json
-.class
+*.class
 .gitignore
+.vscode
