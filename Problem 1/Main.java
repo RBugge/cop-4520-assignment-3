@@ -5,16 +5,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 
 class Main {
-    // Presents have a tag with unique number
-    // Presents were thrown into a large bag with no particular order
-    // Minotaur want to create chain of presents (Linked list)
-    // Presents in chain are ordered by increasing tag number
-    // 4 (threads) servants to help Minotaur to create chain of presents
-
-    /**
-
-     */
-
     /**
      * What could have gone wrong?
      * When linking and unlinking presents, there is a possibility that a
@@ -22,8 +12,6 @@ class Main {
      * while a present was just being added, which would cause the present to
      * be lost.
      */
-
-    // 500,000 presents
 
     static final int NUM_THREADS = 4;
     static final int NUM_PRESENTS = 500000;
