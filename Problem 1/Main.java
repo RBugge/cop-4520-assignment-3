@@ -17,6 +17,7 @@ class Main {
     static final int NUM_PRESENTS = 500000;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
+        long start = System.nanoTime();
         // Shuffled array list of presents, represented by integers
         ArrayList<Integer> presentsList = new ArrayList<>();
         for (int i = 0; i < NUM_PRESENTS; i++) {
@@ -104,6 +105,8 @@ class Main {
         System.out.println("Total thank you cards: " + totalThankYouCards);
 
         executor.shutdown();
+        double execTime = (double) (System.nanoTime() - start) / Math.pow(10, 9);
+        System.out.println("Execution time: " + execTime + " s");
     }
 
 }
