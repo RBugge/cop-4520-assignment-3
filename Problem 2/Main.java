@@ -15,14 +15,15 @@ class Main {
     static final int NUM_INTERVALS = HOURS * 60;
     static final int TEMP_RANGE = MAX_TEMP - MIN_TEMP;
 
+
     // Globals
     static boolean takeReading = true;
     static int count[] = new int[NUM_THREADS];
-    static ConcurrentLinkedDeque<Double> allTemps = new ConcurrentLinkedDeque<>();
+    static ConcurrentLinkedDeque<Integer> allTemps = new ConcurrentLinkedDeque<>();
     static CountDownLatch latch = new CountDownLatch(NUM_THREADS + 1);
 
     @SuppressWarnings("unchecked")
-    static ArrayList<Double> temps[] = new ArrayList[NUM_THREADS];
+    static ArrayList<Integer> temps[] = new ArrayList[NUM_THREADS];
 
     public static void main(String[] args) throws Exception {
         long start = System.nanoTime();
@@ -30,8 +31,9 @@ class Main {
         // Initialize thread array
         ArrayList<Thread> threads = new ArrayList<Thread>(NUM_THREADS);
         for (int i = 0; i < NUM_THREADS; i++) {
-            temps[i] = new ArrayList<Double>();
+            temps[i] = new ArrayList<Integer>();
         }
+
 
         // Sensors/Threads
         for (int i = 0; i < NUM_THREADS; i++) {
@@ -48,7 +50,7 @@ class Main {
                         currentLatch.countDown();
 
                         // Random temp within range
-                        double newTemp = rand.nextInt(TEMP_RANGE + 1) - Math.abs(MIN_TEMP);
+                        int newTemp = rand.nextInt(TEMP_RANGE + 1) - Math.abs(MIN_TEMP);
 
                         // Add temp to this sensor's record
                         temps[ID].add(newTemp);
@@ -87,7 +89,7 @@ class Main {
                 System.out.println("____Hour " + hour + " Report____");
 
                 // Calculate 10 min interval of time containing the largest temp difference
-                double tempDiff = 0;
+                int tempDiff = 0;
                 int startIndex = 0;
                 int endIndex = 0;
                 int sensor0 = 0;
@@ -102,7 +104,7 @@ class Main {
                     for (int k = 0; k < NUM_THREADS; k++) {
                         for (int l = 0; l < NUM_THREADS; l++) {
                             for (int m = j + 1; m < j + 10; m++) {
-                                double newDiff = Math.abs(temps[k].get(j) - temps[l].get(m));
+                                int newDiff = Math.abs(temps[k].get(j) - temps[l].get(m));
                                 if (newDiff > tempDiff) {
                                     tempDiff = newDiff;
                                     sensor0 = k;
@@ -116,15 +118,15 @@ class Main {
                 }
                 String timeIntervalStr = String.format("%2d:%02d to %2d:%02d", hour, startIndex, hour,
                         startIndex + 10);
-                String sensorStr0 = String.format("Sensor %d (%d:%02d): %fF", sensor0, hour, startIndex,
+                String sensorStr0 = String.format("Sensor %d (%d:%02d): %dF", sensor0, hour, startIndex,
                         temps[sensor0].get(startIndex));
-                String sensorStr1 = String.format("Sensor %d (%d:%02d): %fF", sensor1, hour, endIndex,
+                String sensorStr1 = String.format("Sensor %d (%d:%02d): %dF", sensor1, hour, endIndex,
                         temps[sensor1].get(endIndex));
-                System.out.println("Largest temperature difference (10 min interval): " +
-                        timeIntervalStr + " (" + tempDiff + "F)" + "\n\t" + sensorStr0 + "\n\t" + sensorStr1);
+                System.out.println("Largest temperature difference (10 min interval):\n\t" +
+                tempDiff + "F from " + timeIntervalStr + "\n\t" + sensorStr0 + "\n\t" + sensorStr1);
 
                 // Sort every temperature reading and print the first and last five readings
-                ArrayList<Double> sortedTemps = new ArrayList<>(allTemps);
+                ArrayList<Integer> sortedTemps = new ArrayList<>(allTemps);
                 sortedTemps.sort(Comparator.naturalOrder());
                 System.out.println("Lowest 5 temperature (F): " + sortedTemps.subList(0, 5));
                 System.out.println("Highest 5 temperature (F): " +
