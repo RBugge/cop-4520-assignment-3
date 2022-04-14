@@ -15,3 +15,23 @@ Unfortunately, the servants realized at the end of the day that they had more pr
 Can we help the Minotaur and his servants improve their strategy for writing “Thank you” notes?
 
 Design and implement a concurrent linked-list that can help the Minotaur’s 4 servants with this task. In your test, simulate this concurrent “Thank you” card writing scenario by dedicating 1 thread per servant and assuming that the Minotaur received 500,000 presents from his guests.
+
+## What Could Have Gone Wrong?
+
+When linking and unlinking presents, there is a possibility that a present is removed, linking the predecessor and successor of the present, while a present was just being added in the same position which could cause the servant removing a present to unlink the new gift when linking the predecessor and successor.
+
+## Implemetation
+
+My implementation simulates the scenario by creating 4 threads representing the servants and the main thread representing the minotaur. The bag is represented by java's concurrent linked queue. To simulate the effect of being shuffled, an array list is created first and populated with integers from 0 to 500,000. The list is then shuffled using Java's collections shuffle function and used to initialize the queue. The chain is represented by the wait free list as described in the textbook. The thank you cards are represented by local variables to each servant which are summed together when the threads are completed.
+
+Each servant thread contains a loop that continues until both the bag and chain are empty. Within the loop, the servant randomly chooses to either remove a present from the bag and add it to the chain or remove a present from the chain and increment the thank you cards counter. The servant then checks if it must check if a present is contained in the chain. The last action is simulated by the Minotaur (main thread) occasionally setting a variable using compare and set with the ID of the present to check for and flagging the reference. The servant uses the contains method and resets the present ID and flag.
+
+## Efficiency
+
+By letting the servants alternate randomly, this implementation allows for the chain to grow to any size, and the larger the size the less efficient the wait free linked list becomes as traversals become more costly. However, due to the randomness, the size of the list should not grow too large on average as the servants will removing presents from the chain at about the same rate as they are adding to it.
+
+Efficiency could be improved as each thread is only removing presents from the head of the queue and linked list causing high contention.
+
+## Experimental Evaluation
+
+Runtime of the program averages around `0.93` seconds using `500,000` presents and `4` threads.

@@ -5,14 +5,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 
 class Main {
-    /**
-     * What could have gone wrong?
-     * When linking and unlinking presents, there is a possibility that a
-     * present is removed linking the predecessor and successor of the present
-     * while a present was just being added, which would cause the present to
-     * be lost.
-     */
-
     static final int NUM_THREADS = 4;
     static final int NUM_PRESENTS = 500000;
 
@@ -112,9 +104,7 @@ class Main {
 }
 
 // Wait Free List as described in the textbook
-// Modified to work :)
-// Uses Integer value as key instead of hash (when applicable) to ensure order
-// Uses head and tail sentinel nodes
+// Uses Integer value as key instead of hash (when applicable) to ensure natural ordering
 class ConcurrentLinkedList<T> {
     private Node head = new Node(null, Integer.MIN_VALUE);
     private Node tail = new Node(null, Integer.MAX_VALUE);

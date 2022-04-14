@@ -153,7 +153,7 @@ class Main {
         for (int i = 0; i < NUM_THREADS; i++) {
             if (count[i] != NUM_INTERVALS) {
                 System.out.println(
-                        "Error: Thread " + i + " : " + count[i] + " readings " + " in " + NUM_INTERVALS + " intervals");
+                        "Error: Thread " + i + " : " + count[i] + " readings in " + NUM_INTERVALS + " intervals");
             }
             finalCount += count[i];
         }
